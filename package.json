@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test": "EXTERNAL_YAML_URL_WHITE_LIST='[\"private.com\"]' && node test-me.js"
+    "test": "EXTERNAL_YAML_URL_WHITE_LIST='[\"private.com\"]' node test-me.js"
   },
   "dependencies": {
     "bluebird": "^3.7.2",
