@@ -3,6 +3,7 @@ const request = require('request-promise');
 const { Agent: HttpAgent } = require('http');
 const { Agent: HttpsAgent } = require('https');
 const is_ip_private = require('private-ip');
+const errorPrefix = 'SSRF:';
 const patchAgent = ({
                         isPrivate = (address) => is_ip_private(address),
                         agent,
@@ -12,7 +13,7 @@ const patchAgent = ({
     agent.createConnection = function (options, fn) {
         const { host: address } = options;
         if (isPrivate(address)) {
-            throw new Error(`private address ${address} is not allowed.`);
+            throw new Error(`${errorPrefix} private address ${address} is not allowed.`);
         }
 
         const client = createConnection.call(this, options, fn);
@@ -21,7 +22,7 @@ const patchAgent = ({
                 return;
             }
 
-            return client.destroy(new Error(`DNS lookup of private '${client._host}' returned ${address} is not allowed.`));
+            return client.destroy(new Error(`${errorPrefix} DNS lookup of private '${client._host}' returned ${address} is not allowed.`));
         });
 
         return client;
@@ -48,7 +49,7 @@ const getAgent = ({ url, ssrf = true, allowListDomains = [], trace = false }) =>
     }
     if (protocol === 'https:') return httpsAgent;
     if (protocol === 'http:') return httpAgent;
-    new Error(`Bad protocol, url must start with http/https, Got ${url}`);
+    new Error(`${errorPrefix} Bad protocol, url must start with http/https, Got ${url}`);
 };
 
 async function httpSsrfGet({ url, trace = true, ssrf = false, allowListDomains = [] }) {
@@ -98,5 +99,8 @@ async function requestSsrfGet({ url, trace = true, ssrf = true, allowListDomains
     }
 }
 
+function isSsrfError(err) {
+    return err.message.startsWith(errorPrefix);
+}
 
-module.exports = { getAgent, httpSsrfGet, requestSsrfGet };
+module.exports = { getAgent, httpSsrfGet, requestSsrfGet, isSsrfError };

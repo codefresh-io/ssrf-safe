@@ -2,7 +2,6 @@ const assertLib =  require('assert');
 const assert = assertLib.strict;
 const http = require('http');
 const { httpSsrfGet, requestSsrfGet } = require('./ssrf-filter');
-
 const server = http.createServer(function (req, res) {
     const url = req.url;
 
@@ -39,8 +38,6 @@ const url404 = `${baseurl}/notfound`;
 
 const testHttp = async () => {
     const trace = true;
-    // fail
-    // await httpSsrfGet({ trace, url: `http://private.com:${PORT}`, ssrf: true });
 
     await httpSsrfGet({ trace, url: baseurl, ssrf: false });
     await httpSsrfGet({ trace, url: google, ssrf: false });
@@ -69,11 +66,17 @@ const testHttp = async () => {
 
 const testRequest = async () => {
     const trace = true;
-    // Requires ENV to have the following export/env var.
-    // EXTERNAL_YAML_URL_WHITE_LIST=["private.com"]
-    const allowListDomains = JSON.parse(process.env.EXTERNAL_YAML_URL_WHITE_LIST);
-    await requestSsrfGet({ trace, url: `http://private.com:${PORT}`, ssrf: true, allowListDomains: allowListDomains});
-
+    if('EXTERNAL_YAML_URL_WHITE_LIST' in process.env) {
+        // Requires ENV to have the following export/env var.
+        // EXTERNAL_YAML_URL_WHITE_LIST=["private.com"]
+        const allowListDomains = JSON.parse(process.env.EXTERNAL_YAML_URL_WHITE_LIST);
+        await requestSsrfGet({
+            trace,
+            url: `http://private.com:${PORT}`,
+            ssrf: true,
+            allowListDomains: allowListDomains
+        });
+    }
     await requestSsrfGet({ trace, url: baseurl, ssrf: false });
     await requestSsrfGet({ trace, url: google, ssrf: false });
     await requestSsrfGet({ trace, url: `http://private.com:${PORT}`, ssrf: false });
