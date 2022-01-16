@@ -1,0 +1,34 @@
+version: '1.0'
+
+steps:
+  main_clone:
+    title: Cloning main repository...
+    type: git-clone
+    repo: '${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}'
+    revision: '${{CF_REVISION}}'
+
+
+  test_with_server:
+    title: Test unit-tests
+    image: node:10.13-alpine
+    commands:
+      - echo "source taken from      ${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}  ${{CF_BRANCH}} ${{CF_REVISION}}"
+      - ls -ltr
+      - head package.json
+      - echo  >> /etc/hosts
+      - echo 0.0.0.0 private.com >> /etc/hosts
+      - echo 0.0.0.0 rprivate.com >> /etc/hosts
+      - cat /etc/hosts
+      - yarn install --frozen-lockfile
+      - yarn test
+
+
+  deploy_to_npm:
+    type: npm-publish
+    arguments:
+      NPM_TOKEN: '${{NPM_TOKEN}}'
+      DIR: ./ssrf-safe
+    when:
+      branch:
+        only: [ main ]
+
