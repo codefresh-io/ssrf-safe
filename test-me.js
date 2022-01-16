@@ -3,7 +3,6 @@ const assert = assertLib.strict;
 const http = require('http');
 const { httpSsrfGet, requestSsrfGet } = require('./ssrf-filter');
 
-let exitcode = 0;
 const server = http.createServer(function (req, res) {
     const url = req.url;
 
@@ -125,7 +124,6 @@ runtTests()
         console.log(`Had err ${error}`, error);
         process.exit(1);
     });
-
 
 
 setTimeout(

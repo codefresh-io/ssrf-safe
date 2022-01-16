@@ -19,6 +19,16 @@ steps:
       - echo 0.0.0.0 private.com >> /etc/hosts
       - echo 0.0.0.0 rprivate.com >> /etc/hosts
       - cat /etc/hosts
-      - export EXTERNAL_YAML_URL_WHITE_LIST='["private.com"]'
       - yarn install --frozen-lockfile
       - yarn test
+
+
+  deploy_to_npm:
+    type: npm-publish
+    arguments:
+      NPM_TOKEN: '${{NPM_TOKEN}}'
+      DIR: ./http-infra
+    when:
+      branch:
+        only: [ master ]
+  
