@@ -1,10 +1,10 @@
 {
-  "name": "node-redirect",
+  "name": "ssrf-safe",
   "version": "0.0.1",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test": "node test-me.js"
+    "test": "EXTERNAL_YAML_URL_WHITE_LIST='[\"private.com\"]' && node test-me.js"
   },
   "dependencies": {
     "bluebird": "^3.7.2",
