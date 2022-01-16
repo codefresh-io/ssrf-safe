@@ -80,6 +80,7 @@ async function httpSsrfGet({ url, trace = true, ssrf = false, allowListDomains =
     });
     const result = await waitfor;
     trace && console.log(`Called ${url} return ${JSON.stringify(result)}`);
+    return result;
 }
 
 async function requestSsrfGet({ url, trace = true, ssrf = true, allowListDomains = [] }) {
@@ -90,6 +91,7 @@ async function requestSsrfGet({ url, trace = true, ssrf = true, allowListDomains
     try {
         const result = await request(url, options);
         trace && console.log(`requestGet Called ${url} return ${JSON.stringify(result)}`);
+        return result;
     } catch (err) {
         trace && console.log('Error: ', err.message);
         throw err;
