@@ -1,6 +1,6 @@
 {
   "name": "node-redirect",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
@@ -9,9 +9,7 @@
   "dependencies": {
     "bluebird": "^3.7.2",
     "https": "^1.0.0",
-    "ip": "^1.1.5",
     "private-ip": "^2.3.3",
-    "request": "^2.88.2",
     "request-promise": "^4.2.6"
   }
 }
