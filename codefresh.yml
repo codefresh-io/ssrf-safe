@@ -21,3 +21,13 @@ steps:
       - cat /etc/hosts
       - yarn install --frozen-lockfile
       - yarn test
+
+
+  deploy_to_npm:
+    type: npm-publish
+    arguments:
+      NPM_TOKEN: '${{NPM_TOKEN}}'
+      DIR: ./http-infra
+    when:
+      branch:
+        only: [ master ]
