@@ -30,5 +30,5 @@ steps:
       DIR: ./http-infra
     when:
       branch:
-        only: [ master ]
-  
+        only: [ main ]
+
