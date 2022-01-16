@@ -1,0 +1,24 @@
+version: '1.0'
+
+steps:
+  main_clone:
+    title: Cloning main repository...
+    type: git-clone
+    repo: '${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}'
+    revision: '${{CF_REVISION}}'
+
+
+  test_with_server:
+    title: Test unit-tests
+    image: node:10.13-alpine
+    commands:
+      - echo "source taken from      ${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}  ${{CF_BRANCH}} ${{CF_REVISION}}"
+      - ls -ltr
+      - head package.json
+      - echo  >> /etc/hosts
+      - echo 0.0.0.0 private.com >> /etc/hosts
+      - echo 0.0.0.0 rprivate.com >> /etc/hosts
+      - cat /etc/hosts
+      - export EXTERNAL_YAML_URL_WHITE_LIST='["private.com"]'
+      - yarn install --frozen-lockfile
+      - yarn test
