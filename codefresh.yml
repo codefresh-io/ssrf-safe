@@ -27,7 +27,7 @@ steps:
     type: npm-publish
     arguments:
       NPM_TOKEN: '${{NPM_TOKEN}}'
-      DIR: ./http-infra
+      DIR: ./ssrf-safe
     when:
       branch:
         only: [ main ]
