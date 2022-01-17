@@ -1,6 +1,6 @@
 {
   "name": "@codefresh-io/ssrf-safe",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Ssrf check for requests",
   "main": "index.js",
   "license": "MIT",
@@ -8,12 +8,12 @@
     "test": "EXTERNAL_YAML_URL_WHITE_LIST='[\"private.com\"]' node test-me.js"
   },
   "dependencies": {
-    "bluebird": "^3.7.2",
-    "private-ip": "^2.3.3",
-    "request": "^2.88.2",
-    "request-promise": "^4.2.6"
+    "private-ip": "^2.3.3"
   },
   "devDependencies": {
-    "https": "^1.0.0"
+    "bluebird": "^3.7.2",
+    "https": "^1.0.0",
+    "request": "^2.88.2",
+    "request-promise": "^4.2.6"
   }
 }

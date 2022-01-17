@@ -1,7 +1,75 @@
 const assertLib = require('assert');
 const assert = assertLib.strict;
+
 const http = require('http');
-const { httpSsrfGet, requestSsrfGet } = require('./ssrf');
+const request = require('request-promise');
+const { getAgent } = require('./ssrf-filter');
+const { requestSsrfOptions } = require('./index');
+
+/*******
+ * Test Helper methods
+ */
+
+/**
+ * Native node http lib use of ssrf agent
+ */
+async function httpSsrfGet({ url, trace = true, ssrf = false, allowListDomains = [] }) {
+    trace && console.log(`Calling ${url} ssrf:${ssrf} allowListDomains:${allowListDomains}`);
+    const options = ssrf ? {
+        agent: getAgent({ url, allowListDomains, trace }),
+    } : {};
+    const waitfor = new Promise((resolve, reject) => {
+        let data = [];
+        trace && console.log(`http.get ${url},  ${JSON.stringify(options)}`);
+        http.get(url, options, res => {
+            const headerDate = res.headers && res.headers.date ? res.headers.date : 'no response date';
+            trace && console.log('Status Code:', res.statusCode);
+            trace && console.log('Date in Response header:', headerDate);
+
+            res.on('data', chunk => {
+                data.push(chunk);
+            });
+
+            res.on('end', () => {
+                trace && console.log('Response ended: ');
+                resolve({ data: data.join(''), statusCode: res.statusCode });
+            });
+        })
+            .on('error', err => {
+                trace && console.log('Error: ', err.message);
+                reject(err);
+            });
+    });
+    const result = await waitfor;
+    trace && console.log(`Called ${url} return ${JSON.stringify(result)}`);
+    return result;
+}
+
+/**
+ * convenience method for doing request get.
+ * @param url
+ * @param trace
+ * @param ssrf
+ * @param allowListDomains
+ * @returns {Promise<*>}
+ */
+async function requestSsrfGet({ url, trace = true, ssrf = true, allowListDomains = [] }) {
+    trace && console.log(`requestGet Calling ${url} ssrf: ${ssrf} allowListDomains:${allowListDomains}`);
+    const options = ssrf ? requestSsrfOptions({ url, trace, ssrf, allowListDomains }) : { uri: url };
+    try {
+        const result = await request(options);
+        trace && console.log(`requestGet Called ${url} return ${JSON.stringify(result)}`);
+        return result;
+    } catch (err) {
+        trace && console.log('Error: ', err.message);
+        throw err;
+    }
+}
+
+/*********
+ * Test server
+ */
+
 const server = http.createServer(function (req, res) {
     const url = req.url;
 
@@ -35,6 +103,11 @@ server.listen(PORT);
 const baseurl = `http://0.0.0.0:${PORT}`;
 const google = `${baseurl}/google`;
 
+
+/****
+ * Test native http lib
+ * @returns {Promise<void>}
+ */
 const testHttp = async () => {
     const trace = true;
 
@@ -68,6 +141,10 @@ const testHttp = async () => {
     });
 };
 
+/**
+ * Test with request lib
+ * @returns {Promise<void>}
+ */
 const testRequest = async () => {
     const trace = true;
     if ('EXTERNAL_YAML_URL_WHITE_LIST' in process.env) {
@@ -146,14 +223,12 @@ const runtTests = async () => {
     await testRequest();
 };
 runtTests()
-    .then(() => {console.log(`Done`);})
+    .then(() => {
+        console.log(`Done`);
+        server.close();
+    })
     .catch(error => {
         console.log(`Had err ${error}`, error);
+        server.close();
         process.exit(1);
     });
-
-
-setTimeout(
-    (msg) => server.close(() => { console.log(msg);}),
-    3 * 1000,
-    `Server closed.`);

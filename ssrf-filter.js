@@ -42,10 +42,7 @@ const httpsAgent = patchAgent({ agent: new HttpsAgent() });
  * @param trace
  * @returns {undefined|*}
  */
-const getAgent = ({ url, ssrf = true, allowListDomains = [], trace = false }) => {
-    if (!ssrf) {
-        return undefined;
-    }
+const getAgent = ({ url, allowListDomains = [], trace = false }) => {
     const urlObject = new URL(url);
     const protocol = urlObject.protocol;
     const hostname = urlObject.hostname;
