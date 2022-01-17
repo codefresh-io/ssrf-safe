@@ -1,4 +1,5 @@
-const { requestSsrfGet, isSsrfError } = require('./ssrf-filter');
+const { getAgent,  isSsrfError } = require('./ssrf-filter');
+const { requestSsrfOptions } = require('./ssrf');
 
 
-module.exports = {  requestSsrfGet, isSsrfError };
+module.exports = { getAgent, isSsrfError, requestSsrfOptions };

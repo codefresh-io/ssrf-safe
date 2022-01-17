@@ -1,5 +1,3 @@
-const http = require('http');
-const request = require('request-promise');
 const { Agent: HttpAgent } = require('http');
 const { Agent: HttpsAgent } = require('https');
 const is_ip_private = require('private-ip');
@@ -35,7 +33,15 @@ const patchAgent = ({
 const httpAgent = patchAgent({ agent: new HttpAgent() });
 const httpsAgent = patchAgent({ agent: new HttpsAgent() });
 
-
+/**
+ * Prepare Ssrf filter agent to use in request options as as agent.
+ * The agent can be used directly by any kind of client
+ * @param url
+ * @param ssrf
+ * @param allowListDomains
+ * @param trace
+ * @returns {undefined|*}
+ */
 const getAgent = ({ url, ssrf = true, allowListDomains = [], trace = false }) => {
     if (!ssrf) {
         return undefined;
@@ -52,55 +58,14 @@ const getAgent = ({ url, ssrf = true, allowListDomains = [], trace = false }) =>
     new Error(`${errorPrefix} Bad protocol, url must start with http/https, Got ${url}`);
 };
 
-async function httpSsrfGet({ url, trace = true, ssrf = false, allowListDomains = [] }) {
-    trace && console.log(`Calling ${url} ssrf:${ssrf} allowListDomains:${allowListDomains}`);
-    const options = {
-        agent: getAgent({ url, ssrf, allowListDomains, trace })
-    }
-    const waitfor = new Promise((resolve, reject) => {
-        let data = [];
-        trace && console.log(`http.get ${url},  ${JSON.stringify(options)}`);
-        http.get(url, options, res => {
-            const headerDate = res.headers && res.headers.date ? res.headers.date : 'no response date';
-            trace && console.log('Status Code:', res.statusCode);
-            trace && console.log('Date in Response header:', headerDate);
 
-            res.on('data', chunk => {
-                data.push(chunk);
-            });
-
-            res.on('end', () => {
-                trace && console.log('Response ended: ');
-                resolve({ data: data.join(''), statusCode: res.statusCode });
-            });
-        })
-            .on('error', err => {
-                trace && console.log('Error: ', err.message);
-                reject(err);
-            });
-    });
-    const result = await waitfor;
-    trace && console.log(`Called ${url} return ${JSON.stringify(result)}`);
-    return result;
-}
-
-async function requestSsrfGet({ url, trace = true, ssrf = true, allowListDomains = [] }) {
-    trace && console.log(`requestGet Calling ${url} ssrf:${ssrf} allowListDomains:${allowListDomains}`);
-    const options = {
-        agent: getAgent({ url, ssrf, allowListDomains, trace })
-    }
-    try {
-        const result = await request(url, options);
-        trace && console.log(`requestGet Called ${url} return ${JSON.stringify(result)}`);
-        return result;
-    } catch (err) {
-        trace && console.log('Error: ', err.message);
-        throw err;
-    }
-}
-
+/**
+ * method for checking if an error was thrown by the Ssrf agent filter.
+ * @param err
+ * @returns {boolean}
+ */
 function isSsrfError(err) {
     return err.message.startsWith(errorPrefix);
 }
 
-module.exports = { getAgent, httpSsrfGet, requestSsrfGet, isSsrfError };
+module.exports = { getAgent, isSsrfError };
