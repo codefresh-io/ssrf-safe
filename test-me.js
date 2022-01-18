@@ -4,7 +4,7 @@ const assert = assertLib.strict;
 const http = require('http');
 const request = require('request-promise');
 const { getAgent } = require('./ssrf-filter');
-const { requestSsrfOptions } = require('./index');
+const { requestSsrfOptions, isSsrfError } = require('./index');
 
 /*******
  * Test Helper methods
@@ -215,13 +215,21 @@ const testRequest = async () => {
         hadFailedCnt++;
     }
     assert(hadFailedCnt === 5);
-};
 
+    try {
+        const url = `http://private.com:${PORT}`;
+        const options = requestSsrfOptions({ url });
+        return await request(options);
+    } catch (cause) {
+        assert(isSsrfError(cause));
+    }
+};
 
 const runtTests = async () => {
     await testHttp();
     await testRequest();
 };
+
 runtTests()
     .then(() => {
         console.log(`Done`);

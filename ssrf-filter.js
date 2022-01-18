@@ -62,7 +62,7 @@ const getAgent = ({ url, allowListDomains = [], trace = false }) => {
  * @returns {boolean}
  */
 function isSsrfError(err) {
-    return err.message.startsWith(errorPrefix);
+    return err.message.startsWith(`Error: ${errorPrefix}`);
 }
 
 module.exports = { getAgent, isSsrfError };
