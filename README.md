@@ -20,8 +20,7 @@ By adding options
     try {
         return await request({
             method: 'GET',
-            options,
-            uri,
+            ...options
         });
     } catch (cause) {
         throw new NotFoundError({ cause });
@@ -31,11 +30,11 @@ By adding options
 ## Example generic
 add filter agent to the options
 ```node
-const options = requestSsrfOptions({ url: uri });
+const options = { uri };
         try {
-            return await request({
-                options: requestSsrfOptions({ options })
-            });
+            return await request(
+              requestSsrfOptions({ options })
+            );
         } catch (cause) {
             throw new NotFoundError({ cause });
         }
