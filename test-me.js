@@ -3,7 +3,7 @@ const assert = assertLib.strict;
 
 const http = require('http');
 const request = require('request-promise');
-const { requestSsrfOptions, isSsrfError, logSsrfError, getAgent } = require('./index');
+const { requestSsrfOptions, isSsrfError, logSsrfError, getAgent, getAllowList} = require('./index');
 
 /*******
  * Test Helper methods
@@ -67,16 +67,6 @@ async function requestSsrfGet({ url, ssrf = true, allowListDomains = [] }) {
     }
 }
 
-
-
-const getAllowList = () => {
-    if  ('EXTERNAL_YAML_URL_ALLOW_LIST' in process.env) {
-        return process.env['EXTERNAL_YAML_URL_ALLOW_LIST']
-    }
-    if  ('EXTERNAL_YAML_URL_WHITE_LIST' in process.env) {
-        return process.env['EXTERNAL_YAML_URL_WHITE_LIST']
-    }
-}
 
 /*********
  * Test server
