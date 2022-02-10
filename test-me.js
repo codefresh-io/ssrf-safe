@@ -3,8 +3,7 @@ const assert = assertLib.strict;
 
 const http = require('http');
 const request = require('request-promise');
-const { getAgent } = require('./ssrf-filter');
-const { requestSsrfOptions, isSsrfError } = require('./index');
+const { requestSsrfOptions, isSsrfError, logSsrfError, getAgent } = require('./index');
 
 /*******
  * Test Helper methods
@@ -13,56 +12,69 @@ const { requestSsrfOptions, isSsrfError } = require('./index');
 /**
  * Native node http lib use of ssrf agent
  */
-async function httpSsrfGet({ url, trace = true, ssrf = false, allowListDomains = [] }) {
-    trace && console.log(`Calling ${url} ssrf:${ssrf} allowListDomains:${allowListDomains}`);
+async function httpSsrfGet({ url, ssrf = false, allowListDomains = [] }) {
+    const callLog = console.log
+    callLog(`Calling ${url} ssrf:${ssrf} allowListDomains:${allowListDomains}`);
     const options = ssrf ? {
-        agent: getAgent({ url, allowListDomains, trace }),
+        agent: getAgent({ url, allowListDomains, callLog }),
+        callLog
     } : {};
     const waitfor = new Promise((resolve, reject) => {
         let data = [];
-        trace && console.log(`http.get ${url},  ${JSON.stringify(options)}`);
+        callLog(`http.get ${url},  ${JSON.stringify(options)}`);
         http.get(url, options, res => {
             const headerDate = res.headers && res.headers.date ? res.headers.date : 'no response date';
-            trace && console.log('Status Code:', res.statusCode);
-            trace && console.log('Date in Response header:', headerDate);
+            callLog('Status Code:', res.statusCode);
+            callLog('Date in Response header:', headerDate);
 
             res.on('data', chunk => {
                 data.push(chunk);
             });
 
             res.on('end', () => {
-                trace && console.log('Response ended: ');
+                callLog('Response ended: ');
                 resolve({ data: data.join(''), statusCode: res.statusCode });
             });
         })
             .on('error', err => {
-                trace && console.log('Error: ', err.message);
+                logSsrfError(err, callLog);
                 reject(err);
             });
     });
     const result = await waitfor;
-    trace && console.log(`Called ${url} return ${JSON.stringify(result)}`);
+    callLog(`Called ${url} return ${JSON.stringify(result)}`);
     return result;
 }
 
 /**
  * convenience method for doing request get.
  * @param url
- * @param trace
  * @param ssrf
  * @param allowListDomains
  * @returns {Promise<*>}
  */
-async function requestSsrfGet({ url, trace = true, ssrf = true, allowListDomains = [] }) {
-    trace && console.log(`requestGet Calling ${url} ssrf: ${ssrf} allowListDomains:${allowListDomains}`);
-    const options = ssrf ? requestSsrfOptions({ url, trace, ssrf, allowListDomains }) : { uri: url };
+async function requestSsrfGet({ url, ssrf = true, allowListDomains = [] }) {
+    const callLog = console.log
+    callLog(`requestGet Calling ${url} ssrf: ${ssrf} allowListDomains:${allowListDomains}`);
+    const options = ssrf ? requestSsrfOptions({ url, callLog, allowListDomains }) : { uri: url };
     try {
         const result = await request(options);
-        trace && console.log(`requestGet Called ${url} return ${JSON.stringify(result)}`);
+        callLog(`requestGet Called ${url} return ${JSON.stringify(result)}`);
         return result;
     } catch (err) {
-        trace && console.log('Error: ', err.message);
+        logSsrfError(err, callLog);
         throw err;
+    }
+}
+
+
+
+const getAllowList = () => {
+    if  ('EXTERNAL_YAML_URL_ALLOW_LIST' in process.env) {
+        return process.env['EXTERNAL_YAML_URL_ALLOW_LIST']
+    }
+    if  ('EXTERNAL_YAML_URL_WHITE_LIST' in process.env) {
+        return process.env['EXTERNAL_YAML_URL_WHITE_LIST']
     }
 }
 
@@ -90,6 +102,13 @@ const server = http.createServer(function (req, res) {
             location: 'https://private.com',
         });
         res.end();
+    }else if (url === '/xss') {
+        // xss payload
+        // to mitigate that and prevent inline script form running, add the following header
+        // “content-security-policy: default-src 'self'“
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.write("<script>alert('Malicious XSS');alert(document.cookie)</script>");
+        res.end();
     } else {
         // do a 404 redirect
         res.writeHead(404);
@@ -109,120 +128,127 @@ const google = `${baseurl}/google`;
  * @returns {Promise<void>}
  */
 const testHttp = async () => {
-    const trace = true;
-
-    await httpSsrfGet({ trace, url: baseurl, ssrf: false });
-    await httpSsrfGet({ trace, url: google, ssrf: false });
-    await httpSsrfGet({ trace, url: `http://private.com:${PORT}`, ssrf: false });
+    await httpSsrfGet({ url: baseurl, ssrf: false });
+    await httpSsrfGet({ url: google, ssrf: false });
+    await httpSsrfGet({ url: `http://private.com:${PORT}`, ssrf: false });
     let hadFailedCnt = 0;
     try {
-        await httpSsrfGet({ trace, url: baseurl, ssrf: true });
+        await httpSsrfGet({ url: baseurl, ssrf: true });
     } catch (err) {
         hadFailedCnt++;
     }
     assert(hadFailedCnt === 1);
     try {
-        await httpSsrfGet({ trace, url: google, ssrf: true });
+        await httpSsrfGet({ url: google, ssrf: true });
     } catch (err) {
         hadFailedCnt++;
     }
     assert(hadFailedCnt === 2);
     try {
-        await httpSsrfGet({ trace, url: `http://private.com:${PORT}`, ssrf: true });
+        await httpSsrfGet({ url: `http://private.com:${PORT}`, ssrf: true });
     } catch (err) {
         hadFailedCnt++;
     }
     assert(hadFailedCnt === 3);
     await httpSsrfGet({
-        trace,
         url: `http://private.com:${PORT}`,
         ssrf: true,
         allowListDomains: ['xxxx.io', 'private.com'],
     });
 };
 
+
 /**
  * Test with request lib
  * @returns {Promise<void>}
  */
 const testRequest = async () => {
-    const trace = true;
-    if ('EXTERNAL_YAML_URL_WHITE_LIST' in process.env) {
+    const callLog = console.log;
+    const allowList = getAllowList();
+    if (allowList) {
         // Requires ENV to have the following export/env var.
         // EXTERNAL_YAML_URL_WHITE_LIST=["private.com"]
-        const allowListDomains = JSON.parse(process.env.EXTERNAL_YAML_URL_WHITE_LIST);
+        const allowListDomains = JSON.parse(allowList);
         await requestSsrfGet({
-            trace,
             url: `http://private.com:${PORT}`,
             ssrf: true,
             allowListDomains: allowListDomains,
         });
     }
-    await requestSsrfGet({ trace, url: baseurl, ssrf: false });
-    await requestSsrfGet({ trace, url: google, ssrf: false });
-    await requestSsrfGet({ trace, url: `http://private.com:${PORT}`, ssrf: false });
-    var hadFailedCnt = 0;
+    await requestSsrfGet({ url: baseurl, ssrf: false });
+    await requestSsrfGet({ url: google, ssrf: false });
+    await requestSsrfGet({ url: `http://private.com:${PORT}`, ssrf: false });
+    let hadFailedCnt = 0;
     try {
-        await requestSsrfGet({ trace, url: baseurl });
+        await requestSsrfGet({ url: baseurl });
     } catch (err) {
         hadFailedCnt++;
+        logSsrfError(err, callLog )
     }
     assert(hadFailedCnt === 1);
     try {
-        await requestSsrfGet({ trace, url: google });
+        await requestSsrfGet({ url: google });
     } catch (err) {
         hadFailedCnt++;
+        logSsrfError(err, callLog )
     }
     assert(hadFailedCnt === 2);
     try {
-        await requestSsrfGet({ trace, url: `http://private.com:${PORT}` });
+        await requestSsrfGet({ url: `http://private.com:${PORT}` });
     } catch (err) {
         hadFailedCnt++;
+        logSsrfError(err, callLog )
     }
     assert(hadFailedCnt === 3);
     await requestSsrfGet({
-        trace,
         url: `http://private.com:${PORT}`,
         ssrf: true,
         allowListDomains: ['xxxx.io', 'private.com'],
     });
-    await requestSsrfGet({
-        trace,
-        url: `http://private.com:${PORT}`,
-        ssrf: true,
-        allowListDomains: process.env.EXTERNAL_YAML_URL_WHITE_LIST,
-    });
     try {
-        await requestSsrfGet({ trace, url: `http://rprivate.com:${PORT}`, ssrf: true });
+        await requestSsrfGet({ url: `http://rprivate.com:${PORT}`, ssrf: true });
     } catch (err) {
         hadFailedCnt++;
+        logSsrfError(err, callLog )
     }
     assert(hadFailedCnt === 4);
     await requestSsrfGet({
-        trace,
         url: `http://rprivate.com:${PORT}`,
         ssrf: true,
         allowListDomains: ['xxxx.io', 'rprivate.com'],
     });
     try {
         await requestSsrfGet({
-            trace,
             url: `http://rprivate.com:${PORT}`,
             ssrf: true,
             allowListDomains: ['xxxx.io', 'private.com'],
         });
     } catch (err) {
         hadFailedCnt++;
+        logSsrfError(err, callLog )
     }
     assert(hadFailedCnt === 5);
 
     try {
-        const url = `http://private.com:${PORT}`;
-        const options = requestSsrfOptions({ url });
+        const options = requestSsrfOptions({ url: `http://private.com:${PORT}`, callLog });
         return await request(options);
-    } catch (cause) {
-        assert(isSsrfError(cause));
+    } catch (err) {
+        assert(isSsrfError(err));
+        logSsrfError(err, callLog )
     }
+    assert(!isSsrfError(new Error('Not Ssrf error')));
+
+
+    try { // 404
+        const options = requestSsrfOptions({
+            url: `http://private.com:${PORT}/notfound`, callLog, allowListDomains: ['private.com']
+        });
+        return await request(options);
+    } catch (err) {
+        hadFailedCnt++;
+        logSsrfError(err, callLog )
+    }
+    assert(hadFailedCnt === 6);
 };
 
 const runtTests = async () => {
