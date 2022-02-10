@@ -42,6 +42,7 @@ const httpsAgent = patchAgent({ agent: new HttpsAgent() });
  * @param callLog undefiend by default, otherwise would call the function (if) provided
  * @returns {undefined|*}
  */
+// eslint-disable-next-line no-unused-vars
 const getAgent = ({ url, allowListDomains = [], callLog = (msg)=>{} }) => {
     const urlObject = new URL(url);
     const protocol = urlObject.protocol;

@@ -3,7 +3,7 @@ const assert = assertLib.strict;
 
 const http = require('http');
 const request = require('request-promise');
-const { requestSsrfOptions, isSsrfError, logSsrfError, getAgent, getAllowList} = require('./index');
+const { requestSsrfOptions, isSsrfError, logSsrfError, getAgent, getAllowList } = require('./index');
 
 /*******
  * Test Helper methods
@@ -92,7 +92,7 @@ const server = http.createServer(function (req, res) {
             location: 'https://private.com',
         });
         res.end();
-    }else if (url === '/xss') {
+    } else if (url === '/xss') {
         // xss payload
         // to mitigate that and prevent inline script form running, add the following header
         // “content-security-policy: default-src 'self'“
@@ -173,21 +173,21 @@ const testRequest = async () => {
         await requestSsrfGet({ url: baseurl });
     } catch (err) {
         hadFailedCnt++;
-        logSsrfError(err, callLog )
+        logSsrfError(err, callLog)
     }
     assert(hadFailedCnt === 1);
     try {
         await requestSsrfGet({ url: google });
     } catch (err) {
         hadFailedCnt++;
-        logSsrfError(err, callLog )
+        logSsrfError(err, callLog)
     }
     assert(hadFailedCnt === 2);
     try {
         await requestSsrfGet({ url: `http://private.com:${PORT}` });
     } catch (err) {
         hadFailedCnt++;
-        logSsrfError(err, callLog )
+        logSsrfError(err, callLog)
     }
     assert(hadFailedCnt === 3);
     await requestSsrfGet({
@@ -199,7 +199,7 @@ const testRequest = async () => {
         await requestSsrfGet({ url: `http://rprivate.com:${PORT}`, ssrf: true });
     } catch (err) {
         hadFailedCnt++;
-        logSsrfError(err, callLog )
+        logSsrfError(err, callLog)
     }
     assert(hadFailedCnt === 4);
     await requestSsrfGet({
@@ -215,7 +215,7 @@ const testRequest = async () => {
         });
     } catch (err) {
         hadFailedCnt++;
-        logSsrfError(err, callLog )
+        logSsrfError(err, callLog)
     }
     assert(hadFailedCnt === 5);
 
@@ -224,7 +224,7 @@ const testRequest = async () => {
         return await request(options);
     } catch (err) {
         assert(isSsrfError(err));
-        logSsrfError(err, callLog )
+        logSsrfError(err, callLog)
     }
     assert(!isSsrfError(new Error('Not Ssrf error')));
 
@@ -236,7 +236,7 @@ const testRequest = async () => {
         return await request(options);
     } catch (err) {
         hadFailedCnt++;
-        logSsrfError(err, callLog )
+        logSsrfError(err, callLog)
     }
     assert(hadFailedCnt === 6);
 };

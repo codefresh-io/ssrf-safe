@@ -5,13 +5,15 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test": "EXTERNAL_YAML_URL_WHITE_LIST='[\"private.com\"]' node test-me.js"
+    "test": "EXTERNAL_YAML_URL_WHITE_LIST='[\"private.com\"]' node test-me.js",
+    "lint": "eslint *.js"
   },
   "dependencies": {
     "private-ip": "^2.3.3"
   },
   "devDependencies": {
     "bluebird": "^3.7.2",
+    "eslint": "^8.8.0",
     "https": "^1.0.0",
     "request": "^2.88.2",
     "request-promise": "^4.2.6"
