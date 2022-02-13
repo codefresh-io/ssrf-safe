@@ -40,7 +40,7 @@ const options = { uri };
         }
 ```
  
-## using logs
+## Using logs
 ```node
 const options = { uri };
         try {
