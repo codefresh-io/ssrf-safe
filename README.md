@@ -39,3 +39,16 @@ const options = { uri };
             throw new NotFoundError({ cause });
         }
 ```
+ 
+## using logs
+```node
+const options = { uri };
+        try {
+            return await request(
+              requestSsrfOptions({ options })
+            );
+        } catch (cause) {
+            logSsrfError(err, logger.warning);
+            throw new NotFoundError({ cause });
+        }
+```
