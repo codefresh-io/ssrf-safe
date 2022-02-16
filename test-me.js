@@ -249,7 +249,11 @@ const runtTests = async () => {
 runtTests()
     .then(() => {
         console.log(`Done`);
-        server.close();
+        if (process.argv.includes('stay'))  {
+            console.log('Stay up');
+        } else {
+            server.close();
+        }
     })
     .catch(error => {
         console.log(`Had err ${error}`, error);

@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "test": "EXTERNAL_YAML_URL_WHITE_LIST='[\"private.com\"]' node test-me.js",
+    "test-stay": "yarn test stay",
     "lint": "eslint *.js"
   },
   "engine": {
