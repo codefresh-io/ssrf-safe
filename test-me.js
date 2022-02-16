@@ -115,7 +115,7 @@ const server = http.createServer(function (req, res) {
 const PORT = 3000;
 server.listen(PORT);
 const baseurl = `http://0.0.0.0:${PORT}`;
-const google = `${baseurl}/google`;
+const exampleUrl = `${baseurl}/example`;
 
 const example = `
 version: "1.0"
@@ -162,7 +162,7 @@ steps:
  */
 const testHttp = async () => {
     await httpSsrfGet({ url: baseurl, ssrf: false });
-    await httpSsrfGet({ url: google, ssrf: false });
+    await httpSsrfGet({ url: exampleUrl, ssrf: false });
     await httpSsrfGet({ url: `http://private.com:${PORT}`, ssrf: false });
     let hadFailedCnt = 0;
     try {
@@ -172,7 +172,7 @@ const testHttp = async () => {
     }
     assert(hadFailedCnt === 1);
     try {
-        await httpSsrfGet({ url: google, ssrf: true });
+        await httpSsrfGet({ url: exampleUrl, ssrf: true });
     } catch (err) {
         hadFailedCnt++;
     }
@@ -208,7 +208,7 @@ const testRequest = async () => {
         });
     }
     await requestSsrfGet({ url: baseurl, ssrf: false });
-    await requestSsrfGet({ url: google, ssrf: false });
+    await requestSsrfGet({ url: exampleUrl, ssrf: false });
     await requestSsrfGet({ url: `http://private.com:${PORT}`, ssrf: false });
     let hadFailedCnt = 0;
     try {
@@ -219,7 +219,7 @@ const testRequest = async () => {
     }
     assert(hadFailedCnt === 1);
     try {
-        await requestSsrfGet({ url: google });
+        await requestSsrfGet({ url: exampleUrl });
     } catch (err) {
         hadFailedCnt++;
         logSsrfError(err, callLog)
