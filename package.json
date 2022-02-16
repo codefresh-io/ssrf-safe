@@ -1,17 +1,20 @@
 {
   "name": "@codefresh-io/ssrf-safe",
-  "version": "0.0.10",
+  "version": "0.1.0",
   "description": "Ssrf check for requests",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test": "EXTERNAL_YAML_URL_WHITE_LIST='[\"private.com\"]' node test-me.js"
+    "test": "EXTERNAL_YAML_URL_ALLOW_LIST='[\"private.com\"]' node test-me.js",
+    "test-stay": "yarn test stay",
+    "lint": "eslint *.js"
   },
   "dependencies": {
     "private-ip": "^2.3.3"
   },
   "devDependencies": {
     "bluebird": "^3.7.2",
+    "eslint": "^7.32.0",
     "https": "^1.0.0",
     "request": "^2.88.2",
     "request-promise": "^4.2.6"

@@ -7,9 +7,9 @@ const { getAgent } = require('./ssrf-filter');
 /**
  * method returning options with agent based on url parameter
  */
-function ssrfOptions({ url, options = {}, trace = true, allowListDomains = [] }) {
-    const agent = getAgent({ url, allowListDomains });
-    return { ...options, agent };
+function ssrfOptions({ url, options = {}, callLog = undefined, allowListDomains = [] }) {
+    const agent = getAgent({ url, allowListDomains, callLog });
+    return { ...options, agent, callLog };
 }
 
 /**
@@ -21,11 +21,11 @@ function ssrfOptions({ url, options = {}, trace = true, allowListDomains = [] })
 function requestSsrfOptions({
                                 url = undefined,
                                 options = { uri: undefined },
-                                trace = false,  // for test/debug
+                                callLog = undefined,  // for log/test/debug
                                 allowListDomains = [], //
                             }) {
     url = url || options.uri;
-    options = ssrfOptions({ url: url, options, trace, allowListDomains });
+    options = ssrfOptions({ url: url, options, callLog, allowListDomains });
     return { ...options, uri: url };
 }
 

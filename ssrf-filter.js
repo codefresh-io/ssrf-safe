@@ -39,15 +39,16 @@ const httpsAgent = patchAgent({ agent: new HttpsAgent() });
  * @param url
  * @param ssrf
  * @param allowListDomains
- * @param trace
+ * @param callLog undefiend by default, otherwise would call the function (if) provided
  * @returns {undefined|*}
  */
-const getAgent = ({ url, allowListDomains = [], trace = false }) => {
+// eslint-disable-next-line no-unused-vars
+const getAgent = ({ url, allowListDomains = [], callLog = (msg)=>{} }) => {
     const urlObject = new URL(url);
     const protocol = urlObject.protocol;
     const hostname = urlObject.hostname;
     if (allowListDomains.includes(hostname)) {
-        trace && console.log(`Allow list match: ${hostname}, in: ${allowListDomains}, ignore ssrf`);
+        callLog(`Allow list match: ${hostname}, in: ${allowListDomains}, ignore ssrf`);
         return undefined;
     }
     if (protocol === 'https:') return httpsAgent;
@@ -65,4 +66,17 @@ function isSsrfError(err) {
     return err.message.startsWith(`Error: ${errorPrefix}`);
 }
 
-module.exports = { getAgent, isSsrfError };
+/**
+ * Convenience method to detect and log ssrf error using 'calling' method given as parameter
+ * @param err
+ * @param logMethod
+ */
+function logSsrfError(err, logMethod) {
+    if ((isSsrfError(err)) && logMethod) {
+        if (logMethod) {
+            logMethod(err.message);
+        }
+    }
+}
+
+module.exports = { getAgent, isSsrfError, logSsrfError };

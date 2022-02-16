@@ -10,7 +10,7 @@ steps:
 
   test_with_server:
     title: Test unit-tests
-    image: node:10.13-alpine
+    image: node:10.24-alpine
     commands:
       - echo "source taken from      ${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}  ${{CF_BRANCH}} ${{CF_REVISION}}"
       - ls -ltr
