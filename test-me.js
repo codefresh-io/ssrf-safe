@@ -200,7 +200,7 @@ const testRequest = async () => {
     const allowList = getAllowList();
     if (allowList) {
         // Requires ENV to have the following export/env var.
-        // EXTERNAL_YAML_URL_WHITE_LIST=["private.com"]
+        // EXTERNAL_YAML_URL_ALLOW_LIST=["private.com"]
         await requestSsrfGet({
             url: `http://private.com:${PORT}`,
             ssrf: true,
