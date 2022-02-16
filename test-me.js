@@ -99,6 +99,11 @@ const server = http.createServer(function (req, res) {
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.write("<script>alert('Malicious XSS');alert(document.cookie)</script>");
         res.end();
+    } else if (url === '/example') {
+        // do a 200 response
+        res.writeHead(200, { 'Content-Type': 'text/yaml' });
+        res.write(example);
+        res.end();
     } else {
         // do a 404 redirect
         res.writeHead(404);
@@ -112,6 +117,44 @@ server.listen(PORT);
 const baseurl = `http://0.0.0.0:${PORT}`;
 const google = `${baseurl}/google`;
 
+const example = `
+version: "1.0"
+# Stages can help you organize your steps in stages
+stages:
+  - "clone"
+  - "build"
+  - "test"
+
+steps:
+  clone:
+    title: "Cloning repository"
+    type: "git-clone"
+    repo: "https://github.com/codefresh-io/cli/"
+    # Clone the master branch. Or, use \${{CF_BRANCH}} to get branch name from trigger
+    # Learn more at https://codefresh.io/docs/docs/codefresh-yaml/variables/
+    revision: "master"
+    stage: "clone"
+
+  build:
+    title: "Building Docker image"
+    type: "build"
+    image_name: "codefresh-io/cli"
+    working_directory: "\${{clone}}"
+    # Set 'latest' tag on the image. Or, use built-in variables
+    # like \${{CF_BRANCH_TAG_NORMALIZED}} to use the current branch name/tag.
+    tag: "latest"
+    dockerfile: "Dockerfile"
+    stage: "build"
+
+  test:
+    title: "Running test"
+    type: "freestyle" # Run any command
+    image: "ubuntu:latest" # The image in which command will be executed
+    working_directory: "\${{clone}}" # Running command where code cloned
+    commands:
+      - "ls"
+    stage: "test"
+`
 
 /****
  * Test native http lib
